@@ -35,10 +35,33 @@ class SceneObject(BaseModel):
         return v % 360.0
 
 
+class LightingScheme(BaseModel):
+    temperature_k: int = Field(default=3000, description="Lighting color temperature in Kelvin (2700-6000K)")
+    ambient_intensity: float = Field(default=0.7, ge=0.1, le=2.0)
+    directional_intensity: float = Field(default=1.0, ge=0.1, le=3.0)
+    ceiling_fixtures: list[str] = Field(
+        default_factory=lambda: ["cove", "recessed"],
+        description="Fixture recommendations: cove, recessed, pendant, floor_lamp",
+    )
+
+
+class RoomStyling(BaseModel):
+    wall_color: str = Field(default="#FAF7F2", description="Primary wall paint color (hex)")
+    accent_wall_color: str | None = Field(default="#C2410C", description="Focal accent wall paint color (hex)")
+    accent_wall_index: int = Field(default=0, ge=0, le=3, description="Wall index: 0=front, 1=back, 2=left, 3=right")
+    floor_material: str = Field(
+        default="hardwood_teak",
+        description="hardwood_teak, oak_parquet, white_marble, kota_stone, polished_concrete",
+    )
+    lighting: LightingScheme = Field(default_factory=LightingScheme)
+    theme_name: str | None = Field(default="Warm Contemporary", description="Interior aesthetic theme name")
+
+
 class CanonicalScene(BaseModel):
     schema_version: int = Field(default=1, ge=1)
     units: Literal["m"] = "m"
     room: RoomDimensions
+    styling: RoomStyling | None = Field(default_factory=RoomStyling)
     objects: list[SceneObject] = Field(default_factory=list)
 
 

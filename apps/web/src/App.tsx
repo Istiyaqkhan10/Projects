@@ -7,8 +7,9 @@ import { InspectorPanel } from "./features/room-editor/InspectorPanel";
 import { BudgetSummaryDock } from "./features/budget/BudgetSummaryDock";
 import { EstimateModal } from "./features/budget/EstimateModal";
 import { AILayoutModal } from "./features/ai-layout/AILayoutModal";
+import { AIRoomEnhancerModal } from "./features/room-enhancement/AIRoomEnhancerModal";
 import { CreateProjectModal } from "./features/projects/CreateProjectModal";
-import { CanonicalScene, SceneObject } from "./schemas/scene";
+import { CanonicalScene, RoomStyling, SceneObject } from "./schemas/scene";
 import { CatalogItem } from "./schemas/catalog";
 import { api, ProjectData, CreateProjectPayload, ConflictError } from "./services/api";
 
@@ -34,6 +35,7 @@ export const App: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEstimateModalOpen, setIsEstimateModalOpen] = useState(false);
   const [isAILayoutModalOpen, setIsAILayoutModalOpen] = useState(false);
+  const [isAIRoomEnhancerModalOpen, setIsAIRoomEnhancerModalOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -273,6 +275,13 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleUpdateStyling = (styling: RoomStyling) => {
+    pushSceneState({
+      ...scene,
+      styling,
+    });
+  };
+
   return (
     <div className="flex flex-col h-screen w-screen bg-gray-100 overflow-hidden">
       {/* Top Navigation */}
@@ -292,6 +301,13 @@ export const App: React.FC = () => {
         canRedo={canRedo}
         onUndo={handleUndo}
         onRedo={handleRedo}
+        onOpenAIRoomEnhancerModal={() => {
+          if (!activeProjectId) {
+            alert("Please create or select a project before using AI Photo Makeover.");
+            return;
+          }
+          setIsAIRoomEnhancerModalOpen(true);
+        }}
         onOpenAILayoutModal={() => {
           if (!activeProjectId) {
             alert("Please create or select a project before using AI Layout proposals.");
@@ -377,6 +393,14 @@ export const App: React.FC = () => {
           onUpdateObject={handleUpdateObject}
           onRemoveObject={handleRemoveObject}
           onUpdateRoomDimensions={handleUpdateRoomDimensions}
+          onUpdateStyling={handleUpdateStyling}
+          onOpenAIRoomEnhancer={() => {
+            if (!activeProjectId) {
+              alert("Please create or select a project before using AI Photo Makeover.");
+              return;
+            }
+            setIsAIRoomEnhancerModalOpen(true);
+          }}
         />
       </div>
 
@@ -420,6 +444,23 @@ export const App: React.FC = () => {
           projectName={projects.find((p) => p.id === activeProjectId)?.name || "Current Project"}
           currentRevision={revision}
           onProposalApplied={(newSceneData) => {
+            setScene(newSceneData.scene);
+            setRevision(newSceneData.revision);
+            pushSceneState(newSceneData.scene);
+            setSaveStatus("saved");
+          }}
+        />
+      )}
+
+      {/* AI Photo Room Enhancer & Makeover Modal */}
+      {activeProjectId && (
+        <AIRoomEnhancerModal
+          isOpen={isAIRoomEnhancerModalOpen}
+          onClose={() => setIsAIRoomEnhancerModalOpen(false)}
+          projectId={activeProjectId}
+          projectName={projects.find((p) => p.id === activeProjectId)?.name || "Current Project"}
+          currentRevision={revision}
+          onEnhancementApplied={(newSceneData) => {
             setScene(newSceneData.scene);
             setRevision(newSceneData.revision);
             pushSceneState(newSceneData.scene);

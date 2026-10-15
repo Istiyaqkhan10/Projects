@@ -14,6 +14,7 @@ import {
   Redo2,
   Sparkles,
   FileDown,
+  Camera,
 } from "lucide-react";
 import { ProjectData } from "../services/api";
 
@@ -37,6 +38,7 @@ interface NavbarProps {
   onUndo?: () => void;
   onRedo?: () => void;
   onOpenAILayoutModal?: () => void;
+  onOpenAIRoomEnhancerModal?: () => void;
   onExportPDF?: () => void;
 }
 
@@ -57,6 +59,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onUndo,
   onRedo,
   onOpenAILayoutModal,
+  onOpenAIRoomEnhancerModal,
   onExportPDF,
 }) => {
   return (
@@ -172,6 +175,18 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Right Controls: Save & Status Indicator */}
       <div className="flex items-center space-x-3 text-xs">
+        {/* AI Photo Makeover Button */}
+        {onOpenAIRoomEnhancerModal && (
+          <button
+            onClick={onOpenAIRoomEnhancerModal}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:via-orange-600 hover:to-rose-600 text-white shadow-sm transition-all"
+            title="Upload room photo to enhance wall colors, lighting atmosphere, and layout"
+          >
+            <Camera className="w-3.5 h-3.5" />
+            <span>AI Photo Makeover</span>
+          </button>
+        )}
+
         {/* AI Layout Button */}
         {onOpenAILayoutModal && (
           <button

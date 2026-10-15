@@ -113,6 +113,51 @@ export interface AILayoutProposalResponse {
   created_at: string;
 }
 
+export interface ColorSwatch {
+  role: string;
+  name: string;
+  hex: string;
+}
+
+export interface LightingRecommendation {
+  temperature_k: number;
+  ambient_intensity: number;
+  directional_intensity: number;
+  ambiance_name: string;
+  recommended_fixtures: string[];
+}
+
+export interface RoomEnhancePayload {
+  image_base64: string;
+  style_preference?: string;
+  room_type?: string;
+  preserve_furniture?: boolean;
+}
+
+export interface RoomEnhancementResponse {
+  id: string;
+  project_id: string;
+  theme_title: string;
+  spatial_analysis: string;
+  design_rationale: string;
+  color_palette: ColorSwatch[];
+  lighting: LightingRecommendation;
+  floor_material: string;
+  floor_name: string;
+  styling: import("../schemas/scene").RoomStyling;
+  suggested_furniture: SuggestedObject[];
+  enhanced_visualization_svg: string;
+  created_at: string;
+}
+
+export interface ApplyEnhancementPayload {
+  expected_revision: number;
+  apply_colors_and_lighting: boolean;
+  apply_furniture: boolean;
+  styling_payload?: import("../schemas/scene").RoomStyling;
+  suggested_objects?: SuggestedObject[];
+}
+
 export class ConflictError extends Error {
   status: number = 409;
   currentRevision?: number;
@@ -340,5 +385,47 @@ export const api = {
     a.click();
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
+  },
+
+  async enhanceRoomFromImage(
+    projectId: string,
+    payload: RoomEnhancePayload
+  ): Promise<RoomEnhancementResponse> {
+    const res = await fetch(`${API_BASE_URL}/projects/${projectId}/enhance-room-image`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Room enhancement failed: ${res.status}`);
+    }
+    return res.json();
+  },
+
+  async applyRoomEnhancement(
+    projectId: string,
+    payload: ApplyEnhancementPayload
+  ): Promise<SceneResponseData> {
+    const res = await fetch(`${API_BASE_URL}/projects/${projectId}/apply-enhancement`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.status === 409) {
+      const err = await res.json();
+      throw new ConflictError(
+        err.detail?.message || "Revision conflict detected when applying room enhancement",
+        err.detail?.expected_revision
+      );
+    }
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Failed to apply room enhancement: ${res.status}`);
+    }
+
+    return res.json();
   },
 };

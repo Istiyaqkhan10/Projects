@@ -21,8 +21,20 @@ export const Room2DCanvas: React.FC<Room2DCanvasProps> = ({
   onUpdateObject,
   onRemoveObject,
 }) => {
-  const { room, objects } = scene;
+  const { room, objects, styling } = scene;
   const svgRef = useRef<SVGSVGElement>(null);
+
+  // Floor material tint
+  const floorTint = (styling?.floor_material && {
+    hardwood_teak: "#fef3c7",
+    oak_parquet: "#fef9c3",
+    white_marble: "#f8fafc",
+    kota_stone: "#f1f5f9",
+    polished_concrete: "#e2e8f0",
+  }[styling.floor_material]) || "#ffffff";
+
+  const accentWallColor = styling?.accent_wall_color;
+  const accentWallIndex = styling?.accent_wall_index ?? 0;
 
   // Dragging state
   const [isDragging, setIsDragging] = useState(false);
@@ -211,10 +223,23 @@ export const Room2DCanvas: React.FC<Room2DCanvasProps> = ({
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center p-4 bg-gray-50 overflow-auto">
       {/* Canvas Top Bar */}
-      <div className="mb-2 text-xs font-mono text-gray-500 flex space-x-4 items-center">
-        <span>Room: {room.width_m.toFixed(2)}m (W) × {room.length_m.toFixed(2)}m (L)</span>
-        <span>• Grid: 0.1m snap</span>
-        <span className="hidden sm:inline">• Shortcuts: [R] Rotate 45° • [Del] Remove • [Arrows] Nudge</span>
+      <div className="mb-2 text-xs font-mono text-gray-500 flex flex-wrap gap-3 items-center justify-between max-w-4xl w-full px-2">
+        <div className="flex space-x-3 items-center">
+          <span>Room: {room.width_m.toFixed(2)}m (W) × {room.length_m.toFixed(2)}m (L)</span>
+          <span>• Grid: 0.1m snap</span>
+          <span className="hidden sm:inline">• Shortcuts: [R] Rotate • [Del] Remove</span>
+        </div>
+        {styling && (
+          <div className="flex items-center space-x-2 bg-white px-2.5 py-1 rounded-md border border-gray-200 text-[11px] shadow-2xs">
+            <span
+              className="w-2.5 h-2.5 rounded-full border border-gray-300 inline-block"
+              style={{ backgroundColor: accentWallColor || styling.wall_color }}
+            />
+            <span className="font-semibold text-gray-800">{styling.theme_name || "Custom Palette"}</span>
+            <span className="text-gray-300">•</span>
+            <span className="text-amber-600 font-semibold">{styling.lighting?.temperature_k ?? 3000}K</span>
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 relative">
@@ -230,17 +255,63 @@ export const Room2DCanvas: React.FC<Room2DCanvasProps> = ({
           {/* Grid */}
           {gridLines}
 
-          {/* Room Boundary Walls */}
+          {/* Room Boundary Walls with Floor Tint */}
           <rect
             x={roomOriginX}
             y={roomOriginZ}
             width={roomPixelWidth}
             height={roomPixelLength}
-            fill="#ffffff"
+            fill={floorTint}
             stroke="#1e293b"
             strokeWidth="3.5"
             rx="2"
           />
+
+          {/* Accent Wall Indicator */}
+          {accentWallColor && accentWallIndex === 0 && (
+            <g>
+              <line
+                x1={roomOriginX}
+                y1={roomOriginZ}
+                x2={roomOriginX + roomPixelWidth}
+                y2={roomOriginZ}
+                stroke={accentWallColor}
+                strokeWidth="6"
+                strokeLinecap="round"
+              />
+              <text
+                x={roomOriginX + roomPixelWidth / 2}
+                y={roomOriginZ + 14}
+                textAnchor="middle"
+                className="text-[9px] font-mono font-bold select-none"
+                fill={accentWallColor}
+              >
+                ★ ACCENT WALL
+              </text>
+            </g>
+          )}
+          {accentWallColor && accentWallIndex === 1 && (
+            <line
+              x1={roomOriginX}
+              y1={roomOriginZ}
+              x2={roomOriginX}
+              y2={roomOriginZ + roomPixelLength}
+              stroke={accentWallColor}
+              strokeWidth="6"
+              strokeLinecap="round"
+            />
+          )}
+          {accentWallColor && accentWallIndex === 2 && (
+            <line
+              x1={roomOriginX + roomPixelWidth}
+              y1={roomOriginZ}
+              x2={roomOriginX + roomPixelWidth}
+              y2={roomOriginZ + roomPixelLength}
+              stroke={accentWallColor}
+              strokeWidth="6"
+              strokeLinecap="round"
+            />
+          )}
 
           {/* Dimension indicators on room edges */}
           <text

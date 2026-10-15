@@ -22,9 +22,11 @@ from app.schemas.project import (
 )
 from app.schemas.scene import (
     CanonicalScene,
+    LightingScheme,
     ObjectDimensions,
     ObjectPosition,
     RoomDimensions,
+    RoomStyling,
     SceneObject,
     SceneResponse,
     SceneUpdatePayload,
@@ -34,6 +36,8 @@ __all__ = [
     "HealthResponse",
     "ErrorResponse",
     "RoomDimensions",
+    "RoomStyling",
+    "LightingScheme",
     "ObjectPosition",
     "ObjectDimensions",
     "SceneObject",
