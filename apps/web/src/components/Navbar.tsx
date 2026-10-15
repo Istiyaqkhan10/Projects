@@ -1,7 +1,20 @@
 import React from "react";
-import { LayoutGrid, Box, Columns, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  LayoutGrid,
+  Box,
+  Columns,
+  CheckCircle2,
+  AlertCircle,
+  Plus,
+  Save,
+  Check,
+  Loader2,
+  AlertTriangle,
+} from "lucide-react";
+import { ProjectData } from "../services/api";
 
 export type ViewMode = "2d" | "3d" | "split";
+export type SaveStatus = "saved" | "unsaved" | "saving" | "conflict";
 
 interface NavbarProps {
   projectName: string;
@@ -9,6 +22,12 @@ interface NavbarProps {
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
   apiHealthy: boolean | null;
+  projects: ProjectData[];
+  activeProjectId: string | null;
+  onSelectProject: (id: string) => void;
+  onOpenCreateModal: () => void;
+  saveStatus: SaveStatus;
+  onSaveScene: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -17,9 +36,15 @@ export const Navbar: React.FC<NavbarProps> = ({
   viewMode,
   onViewModeChange,
   apiHealthy,
+  projects,
+  activeProjectId,
+  onSelectProject,
+  onOpenCreateModal,
+  saveStatus,
+  onSaveScene,
 }) => {
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between sticky top-0 z-40">
+    <header className="bg-white border-b border-gray-200 px-6 py-2.5 flex items-center justify-between sticky top-0 z-40">
       {/* Brand & Project Info */}
       <div className="flex items-center space-x-4">
         <div className="flex items-center space-x-2">
@@ -34,8 +59,33 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <div className="h-5 w-px bg-gray-300" />
 
+        {/* Project Selector & Actions */}
         <div className="flex items-center space-x-2">
-          <h1 className="font-medium text-gray-800 text-sm">{projectName}</h1>
+          {projects.length > 0 ? (
+            <select
+              value={activeProjectId || ""}
+              onChange={(e) => onSelectProject(e.target.value)}
+              className="text-xs font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-orange-500"
+            >
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="text-xs font-semibold text-gray-800">{projectName}</span>
+          )}
+
+          <button
+            onClick={onOpenCreateModal}
+            className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 hover:text-gray-900 text-xs font-medium transition-colors"
+            title="Create New Project"
+          >
+            <Plus className="w-3.5 h-3.5 text-orange-600" />
+            <span>New</span>
+          </button>
+
           <span className="px-2 py-0.5 text-xs font-mono bg-gray-100 text-gray-600 rounded border border-gray-200">
             Rev #{revision}
           </span>
@@ -84,23 +134,57 @@ export const Navbar: React.FC<NavbarProps> = ({
         </button>
       </div>
 
-      {/* API Health Indicator */}
-      <div className="flex items-center space-x-2 text-xs">
-        {apiHealthy === true && (
-          <span className="flex items-center text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
-            <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-            Backend Connected
-          </span>
+      {/* Right Controls: Save & Status Indicator */}
+      <div className="flex items-center space-x-3 text-xs">
+        {/* Save Button */}
+        {activeProjectId && (
+          <button
+            onClick={onSaveScene}
+            disabled={saveStatus === "saving" || saveStatus === "saved"}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-all ${
+              saveStatus === "unsaved"
+                ? "bg-orange-600 hover:bg-orange-700 text-white animate-pulse"
+                : saveStatus === "saving"
+                ? "bg-orange-100 text-orange-700 cursor-not-allowed"
+                : saveStatus === "conflict"
+                ? "bg-amber-600 hover:bg-amber-700 text-white"
+                : "bg-gray-100 text-gray-500 cursor-default"
+            }`}
+          >
+            {saveStatus === "saving" && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            {saveStatus === "saved" && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+            {saveStatus === "unsaved" && <Save className="w-3.5 h-3.5" />}
+            {saveStatus === "conflict" && <AlertTriangle className="w-3.5 h-3.5" />}
+            <span>
+              {saveStatus === "saving"
+                ? "Saving..."
+                : saveStatus === "saved"
+                ? "Saved"
+                : saveStatus === "conflict"
+                ? "Conflict"
+                : "Save Scene"}
+            </span>
+          </button>
         )}
-        {apiHealthy === false && (
-          <span className="flex items-center text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-200">
-            <AlertCircle className="w-3.5 h-3.5 mr-1" />
-            Offline / Standalone
-          </span>
-        )}
-        {apiHealthy === null && (
-          <span className="text-gray-400">Connecting...</span>
-        )}
+
+        {/* Backend Connectivity Indicator */}
+        <div className="flex items-center">
+          {apiHealthy === true && (
+            <span className="flex items-center text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
+              <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+              Connected
+            </span>
+          )}
+          {apiHealthy === false && (
+            <span className="flex items-center text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-200">
+              <AlertCircle className="w-3.5 h-3.5 mr-1" />
+              Offline
+            </span>
+          )}
+          {apiHealthy === null && (
+            <span className="text-gray-400">Connecting...</span>
+          )}
+        </div>
       </div>
     </header>
   );

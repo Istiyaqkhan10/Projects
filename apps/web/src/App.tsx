@@ -1,46 +1,136 @@
-import React, { useState, useEffect } from "react";
-import { Navbar, ViewMode } from "./components/Navbar";
+import React, { useState, useEffect, useCallback } from "react";
+import { Navbar, ViewMode, SaveStatus } from "./components/Navbar";
 import { Room2DCanvas } from "./features/room-editor/Room2DCanvas";
 import { Room3DViewport } from "./features/room-editor/Room3DViewport";
 import { FurnitureCatalogDrawer } from "./features/furniture-catalog/FurnitureCatalogDrawer";
 import { InspectorPanel } from "./features/room-editor/InspectorPanel";
 import { BudgetSummaryDock } from "./features/budget/BudgetSummaryDock";
+import { CreateProjectModal } from "./features/projects/CreateProjectModal";
 import { CanonicalScene, SceneObject } from "./schemas/scene";
 import { CatalogItem } from "./schemas/catalog";
-import { api } from "./services/api";
+import { api, ProjectData, CreateProjectPayload, ConflictError } from "./services/api";
 
-// Initial canonical scene fixture
+// Fallback initial canonical scene fixture
 import defaultSceneFixture from "../../../packages/shared-fixtures/scene-examples/valid_living_room.json";
 import sampleCatalogFixture from "../../../packages/shared-fixtures/validation-cases/sample_catalog_items.json";
 
 export const App: React.FC = () => {
   const [scene, setScene] = useState<CanonicalScene>(defaultSceneFixture as CanonicalScene);
+  const [revision, setRevision] = useState<number>(1);
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>(sampleCatalogFixture as CatalogItem[]);
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("split");
   const [apiHealthy, setApiHealthy] = useState<boolean | null>(null);
 
-  // Check backend health & attempt to load live catalog on mount
+  // Project Management States
+  const [projects, setProjects] = useState<ProjectData[]>([]);
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
+  const [conflictMessage, setConflictMessage] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  // Load project list & catalog on mount
+  const refreshProjects = useCallback(async () => {
+    try {
+      const list = await api.listProjects();
+      setProjects(list);
+      return list;
+    } catch {
+      return [];
+    }
+  }, []);
+
   useEffect(() => {
     api
       .getHealth()
-      .then(() => {
+      .then(async () => {
         setApiHealthy(true);
-        return api.getCatalog();
-      })
-      .then((items) => {
-        if (items && items.length > 0) {
-          setCatalogItems(items);
+
+        // Load catalog items from API
+        api.getCatalog().then((items) => {
+          if (items && items.length > 0) setCatalogItems(items);
+        }).catch(() => {});
+
+        // Load projects from API
+        const list = await refreshProjects();
+        if (list.length > 0) {
+          // Select first project
+          handleSelectProject(list[0].id);
+        } else {
+          // Auto-create initial project if empty
+          try {
+            const initialProj = await api.createProject({
+              name: "Living Room Design",
+              description: "Initial starter room project",
+              room_name: "Living Room",
+              room_width_m: 5.0,
+              room_length_m: 4.0,
+              room_height_m: 2.8,
+            });
+            setProjects([initialProj]);
+            handleSelectProject(initialProj.id);
+          } catch {
+            // Ignore if creation fails
+          }
         }
       })
       .catch(() => {
         setApiHealthy(false);
       });
-  }, []);
+  }, [refreshProjects]);
+
+  const handleSelectProject = async (projId: string) => {
+    setActiveProjectId(projId);
+    setConflictMessage(null);
+    setValidationError(null);
+    try {
+      const res = await api.getProjectScene(projId);
+      setScene(res.scene);
+      setRevision(res.revision);
+      setSaveStatus("saved");
+    } catch {
+      // Fallback to default fixture
+      setSaveStatus("saved");
+    }
+  };
+
+  const handleCreateProject = async (payload: CreateProjectPayload) => {
+    const newProj = await api.createProject(payload);
+    await refreshProjects();
+    await handleSelectProject(newProj.id);
+  };
+
+  const handleSaveScene = async () => {
+    if (!activeProjectId) return;
+    setSaveStatus("saving");
+    setConflictMessage(null);
+    setValidationError(null);
+
+    try {
+      const res = await api.saveProjectScene(activeProjectId, revision, scene);
+      setScene(res.scene);
+      setRevision(res.revision);
+      setSaveStatus("saved");
+    } catch (err: unknown) {
+      if (err instanceof ConflictError) {
+        setSaveStatus("conflict");
+        setConflictMessage(
+          `Revision conflict: Server is at revision #${err.currentRevision}, but local was #${revision}. Please reload scene.`
+        );
+      } else {
+        setSaveStatus("unsaved");
+        const msg = err instanceof Error ? err.message : "Failed to save scene.";
+        setValidationError(msg);
+      }
+    }
+  };
 
   const catalogMap = new Map<string, CatalogItem>(
     catalogItems.map((item) => [item.id, item])
   );
+
+  const activeProject = projects.find((p) => p.id === activeProjectId);
 
   const handleAddFurniture = (item: CatalogItem) => {
     const newInstanceId = `inst-${item.id}-${Date.now().toString().slice(-4)}`;
@@ -65,6 +155,7 @@ export const App: React.FC = () => {
       objects: [...prev.objects, newObj],
     }));
     setSelectedInstanceId(newInstanceId);
+    setSaveStatus("unsaved");
   };
 
   const handleUpdateObject = (updated: SceneObject) => {
@@ -74,6 +165,7 @@ export const App: React.FC = () => {
         o.instance_id === updated.instance_id ? updated : o
       ),
     }));
+    setSaveStatus("unsaved");
   };
 
   const handleRemoveObject = (instanceId: string) => {
@@ -84,29 +176,74 @@ export const App: React.FC = () => {
     if (selectedInstanceId === instanceId) {
       setSelectedInstanceId(null);
     }
+    setSaveStatus("unsaved");
   };
 
-  const handleUpdateRoomDimensions = (width_m: number, length_m: number, height_m: number) => {
+  const handleUpdateRoomDimensions = async (
+    width_m: number,
+    length_m: number,
+    height_m: number
+  ) => {
     setScene((prev) => ({
       ...prev,
-      room: {
-        width_m,
-        length_m,
-        height_m,
-      },
+      room: { width_m, length_m, height_m },
     }));
+    setSaveStatus("unsaved");
+
+    if (activeProjectId && activeProject?.rooms?.[0]?.id) {
+      try {
+        await api.updateRoomDimensions(activeProjectId, activeProject.rooms[0].id, {
+          width_m,
+          length_m,
+          height_m,
+        });
+      } catch {
+        // Continue locally
+      }
+    }
   };
 
   return (
     <div className="flex flex-col h-screen w-screen bg-gray-100 overflow-hidden">
       {/* Top Navigation */}
       <Navbar
-        projectName="Living Room Layout"
-        revision={1}
+        projectName={activeProject ? activeProject.name : "Living Room Layout"}
+        revision={revision}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         apiHealthy={apiHealthy}
+        projects={projects}
+        activeProjectId={activeProjectId}
+        onSelectProject={handleSelectProject}
+        onOpenCreateModal={() => setIsCreateModalOpen(true)}
+        saveStatus={saveStatus}
+        onSaveScene={handleSaveScene}
       />
+
+      {/* Conflict or Validation Banner */}
+      {conflictMessage && (
+        <div className="bg-amber-500 text-white px-6 py-2 text-xs flex items-center justify-between shadow-sm z-30">
+          <span>⚠️ {conflictMessage}</span>
+          <button
+            onClick={() => activeProjectId && handleSelectProject(activeProjectId)}
+            className="px-2 py-0.5 bg-amber-700 hover:bg-amber-800 rounded font-semibold text-[11px]"
+          >
+            Reload Server Scene
+          </button>
+        </div>
+      )}
+
+      {validationError && (
+        <div className="bg-rose-600 text-white px-6 py-2 text-xs flex items-center justify-between shadow-sm z-30">
+          <span>❌ {validationError}</span>
+          <button
+            onClick={() => setValidationError(null)}
+            className="text-[11px] underline hover:no-underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Main Workspace */}
       <div className="flex flex-1 overflow-hidden relative">
@@ -151,6 +288,13 @@ export const App: React.FC = () => {
 
       {/* Bottom Budget Estimation Dock */}
       <BudgetSummaryDock objects={scene.objects} catalogMap={catalogMap} />
+
+      {/* Create Project Modal */}
+      <CreateProjectModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreate={handleCreateProject}
+      />
     </div>
   );
 };

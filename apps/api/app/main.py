@@ -1,9 +1,19 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes.catalog import router as catalog_router
 from app.api.routes.health import router as health_router
+from app.api.routes.projects import router as projects_router
 from app.api.routes.scenes import router as scenes_router
 from app.core.config import settings
+from app.db.session import init_db
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize database tables on startup
+    await init_db()
+    yield
 
 
 def get_application() -> FastAPI:
@@ -14,6 +24,7 @@ def get_application() -> FastAPI:
         docs_url=f"{settings.API_V1_STR}/docs",
         redoc_url=f"{settings.API_V1_STR}/redoc",
         description="InteriorAI Studio — Production-Minded AI Interior Design Platform for the Indian Market",
+        lifespan=lifespan,
     )
 
     # CORS configuration
@@ -30,6 +41,7 @@ def get_application() -> FastAPI:
 
     # Versioned API routes (/api/v1)
     application.include_router(health_router, prefix=settings.API_V1_STR, tags=["health"])
+    application.include_router(projects_router, prefix=f"{settings.API_V1_STR}/projects", tags=["projects"])
     application.include_router(catalog_router, prefix=f"{settings.API_V1_STR}/catalog", tags=["catalog"])
     application.include_router(scenes_router, prefix=f"{settings.API_V1_STR}/scenes", tags=["scenes"])
 

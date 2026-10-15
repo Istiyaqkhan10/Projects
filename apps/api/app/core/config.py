@@ -21,8 +21,10 @@ class Settings(BaseSettings):
 
     @property
     def async_database_uri(self) -> str:
-        if self.DATABASE_URL:
+        if self.DATABASE_URL and "placeholder" not in self.DATABASE_URL:
             return self.DATABASE_URL
+        if self.ENVIRONMENT in ("development", "test"):
+            return "sqlite+aiosqlite:///./interiorai.db"
         return (
             f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@"
             f"{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"

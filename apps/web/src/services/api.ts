@@ -15,6 +15,55 @@ export interface GeometryValidationResponse {
   errors: string[];
 }
 
+export interface RoomData {
+  id: string;
+  project_id: string;
+  name: string;
+  width_m: number;
+  length_m: number;
+  height_m: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectData {
+  id: string;
+  owner_id?: string | null;
+  name: string;
+  description?: string | null;
+  created_at: string;
+  updated_at: string;
+  rooms: RoomData[];
+}
+
+export interface CreateProjectPayload {
+  name: string;
+  description?: string;
+  room_name?: string;
+  room_width_m: number;
+  room_length_m: number;
+  room_height_m: number;
+}
+
+export interface SceneResponseData {
+  project_id: string;
+  room_id: string;
+  revision: number;
+  schema_version: number;
+  scene: CanonicalScene;
+}
+
+export class ConflictError extends Error {
+  status: number = 409;
+  currentRevision?: number;
+
+  constructor(message: string, currentRevision?: number) {
+    super(message);
+    this.name = "ConflictError";
+    this.currentRevision = currentRevision;
+  }
+}
+
 export const api = {
   async getHealth(): Promise<HealthStatus> {
     const res = await fetch(`${API_BASE_URL}/health`);
@@ -31,6 +80,88 @@ export const api = {
     const res = await fetch(`${API_BASE_URL}/catalog?${params.toString()}`);
     if (!res.ok) {
       throw new Error(`Failed to fetch catalog: ${res.status}`);
+    }
+    return res.json();
+  },
+
+  async listProjects(): Promise<ProjectData[]> {
+    const res = await fetch(`${API_BASE_URL}/projects`);
+    if (!res.ok) {
+      throw new Error(`Failed to list projects: ${res.status}`);
+    }
+    return res.json();
+  },
+
+  async createProject(payload: CreateProjectPayload): Promise<ProjectData> {
+    const res = await fetch(`${API_BASE_URL}/projects`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to create project: ${res.status}`);
+    }
+    return res.json();
+  },
+
+  async getProject(projectId: string): Promise<ProjectData> {
+    const res = await fetch(`${API_BASE_URL}/projects/${projectId}`);
+    if (!res.ok) {
+      throw new Error(`Failed to get project: ${res.status}`);
+    }
+    return res.json();
+  },
+
+  async getProjectScene(projectId: string): Promise<SceneResponseData> {
+    const res = await fetch(`${API_BASE_URL}/projects/${projectId}/scene`);
+    if (!res.ok) {
+      throw new Error(`Failed to get project scene: ${res.status}`);
+    }
+    return res.json();
+  },
+
+  async saveProjectScene(
+    projectId: string,
+    expectedRevision: number,
+    scene: CanonicalScene
+  ): Promise<SceneResponseData> {
+    const res = await fetch(`${API_BASE_URL}/projects/${projectId}/scene`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        expected_revision: expectedRevision,
+        scene,
+      }),
+    });
+
+    if (res.status === 409) {
+      const err = await res.json();
+      throw new ConflictError(
+        err.detail?.message || "Revision conflict detected",
+        err.detail?.current_revision
+      );
+    }
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail?.message || `Failed to save scene: ${res.status}`);
+    }
+
+    return res.json();
+  },
+
+  async updateRoomDimensions(
+    projectId: string,
+    roomId: string,
+    dimensions: { width_m?: number; length_m?: number; height_m?: number }
+  ): Promise<RoomData> {
+    const res = await fetch(`${API_BASE_URL}/projects/${projectId}/rooms/${roomId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dimensions),
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to update room dimensions: ${res.status}`);
     }
     return res.json();
   },
