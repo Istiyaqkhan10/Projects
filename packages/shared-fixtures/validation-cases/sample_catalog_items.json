@@ -1,0 +1,53 @@
+[
+  {
+    "id": "cat-sofa-3seater",
+    "name": "Urban Comfort 3-Seater Fabric Sofa",
+    "category": "seating",
+    "manufacturer": "Sample Crafts India (Illustrative)",
+    "description": "Contemporary 3-seater sofa with high density foam and linen upholstery.",
+    "width_m": 2.1,
+    "depth_m": 0.9,
+    "height_m": 0.85,
+    "price_paise": 3499900,
+    "currency": "INR",
+    "asset_reference": "models/furniture/sofa_3seater.glb",
+    "source_url": null,
+    "source_verified_at": null,
+    "license_information": "CC-BY-4.0 (Illustrative demonstration data)",
+    "is_active": true
+  },
+  {
+    "id": "cat-coffee-table-wood",
+    "name": "Nordic Solid Sheesham Coffee Table",
+    "category": "tables",
+    "manufacturer": "WoodArtisans Jaipur (Illustrative)",
+    "description": "Minimalist solid wood rectangular coffee table with natural finish.",
+    "width_m": 1.1,
+    "depth_m": 0.6,
+    "height_m": 0.45,
+    "price_paise": 1149900,
+    "currency": "INR",
+    "asset_reference": "models/furniture/coffee_table.glb",
+    "source_url": null,
+    "source_verified_at": null,
+    "license_information": "CC0-1.0 (Illustrative demonstration data)",
+    "is_active": true
+  },
+  {
+    "id": "cat-king-bed",
+    "name": "Royal Teak King Size Bed",
+    "category": "beds",
+    "manufacturer": "Heritage Living (Illustrative)",
+    "description": "Engineered teak king size bed frame with upholstered headboard.",
+    "width_m": 2.0,
+    "depth_m": 2.1,
+    "height_m": 1.1,
+    "price_paise": 4899900,
+    "currency": "INR",
+    "asset_reference": "models/furniture/king_bed.glb",
+    "source_url": null,
+    "source_verified_at": null,
+    "license_information": "CC-BY-4.0 (Illustrative demonstration data)",
+    "is_active": true
+  }
+]

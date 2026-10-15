@@ -1,0 +1,46 @@
+import json
+from pathlib import Path
+from typing import List, Optional
+from fastapi import APIRouter, HTTPException, Query
+from app.schemas.catalog import CatalogItemResponse
+
+router = APIRouter()
+
+# Path to shared fixtures sample catalog items
+FIXTURES_PATH = Path(__file__).resolve().parents[5] / "packages" / "shared-fixtures" / "validation-cases" / "sample_catalog_items.json"
+
+
+def load_fixtures_catalog() -> List[dict]:
+    if FIXTURES_PATH.exists():
+        with open(FIXTURES_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+
+@router.get("", response_model=List[CatalogItemResponse])
+async def list_catalog(
+    category: Optional[str] = Query(None, description="Filter by furniture category"),
+    search: Optional[str] = Query(None, description="Search query for furniture name/description"),
+) -> List[CatalogItemResponse]:
+    """
+    Returns furniture catalog items with dimensions and paise pricing.
+    """
+    items = load_fixtures_catalog()
+    if category:
+        items = [i for i in items if i.get("category", "").lower() == category.lower()]
+    if search:
+        s = search.lower()
+        items = [i for i in items if s in i.get("name", "").lower() or s in (i.get("description") or "").lower()]
+    return [CatalogItemResponse(**item) for item in items]
+
+
+@router.get("/{item_id}", response_model=CatalogItemResponse)
+async def get_catalog_item(item_id: str) -> CatalogItemResponse:
+    """
+    Returns single catalog item by ID.
+    """
+    items = load_fixtures_catalog()
+    for item in items:
+        if item.get("id") == item_id:
+            return CatalogItemResponse(**item)
+    raise HTTPException(status_code=404, detail=f"Catalog item '{item_id}' not found")

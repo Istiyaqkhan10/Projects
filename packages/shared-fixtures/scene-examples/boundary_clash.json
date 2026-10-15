@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "units": "m",
+  "room": {
+    "width_m": 4.0,
+    "length_m": 3.0,
+    "height_m": 2.8
+  },
+  "objects": [
+    {
+      "instance_id": "obj-bed-oversized",
+      "catalog_item_id": "cat-king-bed",
+      "position": {
+        "x_m": 3.5,
+        "y_m": 0.0,
+        "z_m": 2.0
+      },
+      "rotation_y_deg": 0.0,
+      "dimensions": {
+        "width_m": 2.0,
+        "depth_m": 2.1,
+        "height_m": 1.1
+      }
+    }
+  ]
+}
