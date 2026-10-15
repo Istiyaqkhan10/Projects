@@ -299,6 +299,17 @@ export const App: React.FC = () => {
           }
           setIsAILayoutModalOpen(true);
         }}
+        onExportPDF={async () => {
+          if (!activeProjectId) {
+            alert("Please create or select a project before exporting a PDF report.");
+            return;
+          }
+          try {
+            await api.downloadProjectReport(activeProjectId, revision);
+          } catch (err) {
+            alert(err instanceof Error ? err.message : "Failed to download PDF report");
+          }
+        }}
       />
 
       {/* Conflict or Validation Banner */}

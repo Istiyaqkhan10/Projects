@@ -320,4 +320,25 @@ export const api = {
 
     return res.json();
   },
+
+  async downloadProjectReport(projectId: string, sceneRevision?: number): Promise<void> {
+    const params = new URLSearchParams();
+    if (sceneRevision !== undefined) {
+      params.set("scene_revision", sceneRevision.toString());
+    }
+    const query = params.toString() ? `?${params.toString()}` : "";
+    const res = await fetch(`${API_BASE_URL}/projects/${projectId}/report.pdf${query}`);
+    if (!res.ok) {
+      throw new Error(`Failed to generate PDF report: ${res.status}`);
+    }
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `interiorai_${projectId.slice(0, 8)}_rev${sceneRevision || "latest"}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
 };

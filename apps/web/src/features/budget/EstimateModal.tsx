@@ -8,6 +8,7 @@ import {
   Sparkles,
   AlertCircle,
   ShieldCheck,
+  Download,
 } from "lucide-react";
 import { api, EstimateResponse } from "../../services/api";
 
@@ -31,6 +32,7 @@ export const EstimateModal: React.FC<EstimateModalProps> = ({
   const [estimateHistory, setEstimateHistory] = useState<EstimateResponse[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [isDownloading, setIsDownloading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -52,6 +54,19 @@ export const EstimateModal: React.FC<EstimateModalProps> = ({
       setErrorMessage(err instanceof Error ? err.message : "Failed to load estimates history");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!projectId) return;
+    setIsDownloading(true);
+    try {
+      const rev = currentEstimate ? currentEstimate.scene_revision : currentRevision;
+      await api.downloadProjectReport(projectId, rev);
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : "Failed to download PDF report");
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -141,14 +156,26 @@ export const EstimateModal: React.FC<EstimateModalProps> = ({
             </button>
           </div>
 
-          <button
-            onClick={handleGenerateOfficialSnapshot}
-            disabled={isGenerating}
-            className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-sm"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>{isGenerating ? "Snapshotting..." : "Generate Official Snapshot"}</span>
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleDownloadPDF}
+              disabled={isDownloading}
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 disabled:opacity-50 transition-colors shadow-sm"
+              title="Download official PDF report for this design"
+            >
+              <Download className="w-3.5 h-3.5 text-gray-500" />
+              <span>{isDownloading ? "Generating PDF..." : "Export PDF Report"}</span>
+            </button>
+
+            <button
+              onClick={handleGenerateOfficialSnapshot}
+              disabled={isGenerating}
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-sm"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{isGenerating ? "Snapshotting..." : "Generate Official Snapshot"}</span>
+            </button>
+          </div>
         </div>
 
         {/* Error Banner */}

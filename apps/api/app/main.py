@@ -6,6 +6,7 @@ from app.api.routes.catalog import router as catalog_router
 from app.api.routes.estimates import router as estimates_router
 from app.api.routes.health import router as health_router
 from app.api.routes.projects import router as projects_router
+from app.api.routes.reports import router as reports_router
 from app.api.routes.scenes import router as scenes_router
 from app.core.config import settings
 from app.db.session import init_db
@@ -48,6 +49,7 @@ def get_application() -> FastAPI:
     application.include_router(scenes_router, prefix=f"{settings.API_V1_STR}/scenes", tags=["scenes"])
     application.include_router(estimates_router, prefix=settings.API_V1_STR, tags=["estimates"])
     application.include_router(ai_proposals_router, prefix=f"{settings.API_V1_STR}/projects", tags=["ai-proposals"])
+    application.include_router(reports_router, prefix=f"{settings.API_V1_STR}/projects", tags=["reports"])
 
     return application
 
