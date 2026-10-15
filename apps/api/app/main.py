@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.api.routes.ai_proposals import router as ai_proposals_router
 from app.api.routes.catalog import router as catalog_router
 from app.api.routes.estimates import router as estimates_router
 from app.api.routes.health import router as health_router
@@ -46,6 +47,7 @@ def get_application() -> FastAPI:
     application.include_router(catalog_router, prefix=f"{settings.API_V1_STR}/catalog", tags=["catalog"])
     application.include_router(scenes_router, prefix=f"{settings.API_V1_STR}/scenes", tags=["scenes"])
     application.include_router(estimates_router, prefix=settings.API_V1_STR, tags=["estimates"])
+    application.include_router(ai_proposals_router, prefix=f"{settings.API_V1_STR}/projects", tags=["ai-proposals"])
 
     return application
 

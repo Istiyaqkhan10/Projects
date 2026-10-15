@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   Undo2,
   Redo2,
+  Sparkles,
 } from "lucide-react";
 import { ProjectData } from "../services/api";
 
@@ -34,6 +35,7 @@ interface NavbarProps {
   canRedo?: boolean;
   onUndo?: () => void;
   onRedo?: () => void;
+  onOpenAILayoutModal?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -52,6 +54,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   canRedo = false,
   onUndo,
   onRedo,
+  onOpenAILayoutModal,
 }) => {
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-2 flex items-center justify-between sticky top-0 z-40">
@@ -166,6 +169,18 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Right Controls: Save & Status Indicator */}
       <div className="flex items-center space-x-3 text-xs">
+        {/* AI Layout Button */}
+        {onOpenAILayoutModal && (
+          <button
+            onClick={onOpenAILayoutModal}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-sm transition-all"
+            title="Generate AI-assisted furniture layout"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>AI Layout</span>
+          </button>
+        )}
+
         {/* Save Button */}
         {activeProjectId && (
           <button

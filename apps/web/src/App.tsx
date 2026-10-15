@@ -6,6 +6,7 @@ import { FurnitureCatalogDrawer } from "./features/furniture-catalog/FurnitureCa
 import { InspectorPanel } from "./features/room-editor/InspectorPanel";
 import { BudgetSummaryDock } from "./features/budget/BudgetSummaryDock";
 import { EstimateModal } from "./features/budget/EstimateModal";
+import { AILayoutModal } from "./features/ai-layout/AILayoutModal";
 import { CreateProjectModal } from "./features/projects/CreateProjectModal";
 import { CanonicalScene, SceneObject } from "./schemas/scene";
 import { CatalogItem } from "./schemas/catalog";
@@ -32,6 +33,7 @@ export const App: React.FC = () => {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEstimateModalOpen, setIsEstimateModalOpen] = useState(false);
+  const [isAILayoutModalOpen, setIsAILayoutModalOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -290,6 +292,13 @@ export const App: React.FC = () => {
         canRedo={canRedo}
         onUndo={handleUndo}
         onRedo={handleRedo}
+        onOpenAILayoutModal={() => {
+          if (!activeProjectId) {
+            alert("Please create or select a project before using AI Layout proposals.");
+            return;
+          }
+          setIsAILayoutModalOpen(true);
+        }}
       />
 
       {/* Conflict or Validation Banner */}
@@ -388,6 +397,23 @@ export const App: React.FC = () => {
           projectId={activeProjectId}
           projectName={projects.find((p) => p.id === activeProjectId)?.name || "Current Project"}
           currentRevision={revision}
+        />
+      )}
+
+      {/* AI Layout Assistant Modal */}
+      {activeProjectId && (
+        <AILayoutModal
+          isOpen={isAILayoutModalOpen}
+          onClose={() => setIsAILayoutModalOpen(false)}
+          projectId={activeProjectId}
+          projectName={projects.find((p) => p.id === activeProjectId)?.name || "Current Project"}
+          currentRevision={revision}
+          onProposalApplied={(newSceneData) => {
+            setScene(newSceneData.scene);
+            setRevision(newSceneData.revision);
+            pushSceneState(newSceneData.scene);
+            setSaveStatus("saved");
+          }}
         />
       )}
     </div>

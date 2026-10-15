@@ -1,3 +1,9 @@
+from app.schemas.ai_layout import (
+    AILayoutProposalResponse,
+    AILayoutRequest,
+    ApplyProposalRequest,
+    SuggestedObject,
+)
 from app.schemas.catalog import (
     CatalogItemBase,
     CatalogItemCreate,
@@ -43,4 +49,8 @@ __all__ = [
     "RoomResponse",
     "EstimateCreateRequest",
     "EstimateResponse",
+    "AILayoutRequest",
+    "SuggestedObject",
+    "AILayoutProposalResponse",
+    "ApplyProposalRequest",
 ]

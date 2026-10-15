@@ -87,6 +87,32 @@ export interface EstimateResponse {
   created_at: string;
 }
 
+export interface SuggestedObject {
+  catalog_item_id: string;
+  item_name: string;
+  position: { x_m: number; y_m: number; z_m: number };
+  rotation_y_deg: number;
+  dimensions: { width_m: number; depth_m: number; height_m: number };
+}
+
+export interface AILayoutRequest {
+  prompt?: string;
+  room_type?: "living_room" | "bedroom" | "home_office" | string;
+  preferred_item_ids?: string[];
+}
+
+export interface AILayoutProposalResponse {
+  id: string;
+  project_id: string;
+  base_scene_revision: number;
+  request_parameters: Record<string, unknown>;
+  explanation: string;
+  suggested_objects: SuggestedObject[];
+  validation_status: string;
+  validation_errors: string[];
+  created_at: string;
+}
+
 export class ConflictError extends Error {
   status: number = 409;
   currentRevision?: number;
@@ -238,6 +264,60 @@ export const api = {
     if (!res.ok) {
       throw new Error(`Failed to get estimate: ${res.status}`);
     }
+    return res.json();
+  },
+
+  async generateAIProposal(
+    projectId: string,
+    request: AILayoutRequest
+  ): Promise<AILayoutProposalResponse> {
+    const res = await fetch(`${API_BASE_URL}/projects/${projectId}/ai-proposals`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Failed to generate AI proposal: ${res.status}`);
+    }
+    return res.json();
+  },
+
+  async listAIProposals(projectId: string): Promise<AILayoutProposalResponse[]> {
+    const res = await fetch(`${API_BASE_URL}/projects/${projectId}/ai-proposals`);
+    if (!res.ok) {
+      throw new Error(`Failed to list AI proposals: ${res.status}`);
+    }
+    return res.json();
+  },
+
+  async applyAIProposal(
+    projectId: string,
+    proposalId: string,
+    expectedRevision: number
+  ): Promise<SceneResponseData> {
+    const res = await fetch(
+      `${API_BASE_URL}/projects/${projectId}/ai-proposals/${proposalId}/apply`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ expected_revision: expectedRevision }),
+      }
+    );
+
+    if (res.status === 409) {
+      const err = await res.json();
+      throw new ConflictError(
+        err.detail?.message || "Revision conflict detected when applying proposal",
+        err.detail?.expected_revision
+      );
+    }
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Failed to apply AI proposal: ${res.status}`);
+    }
+
     return res.json();
   },
 };

@@ -1,3 +1,4 @@
+from app.api.routes.ai_proposals import router as ai_proposals_router
 from app.api.routes.catalog import router as catalog_router
 from app.api.routes.estimates import router as estimates_router
 from app.api.routes.health import router as health_router
@@ -10,4 +11,5 @@ __all__ = [
     "projects_router",
     "scenes_router",
     "estimates_router",
+    "ai_proposals_router",
 ]
