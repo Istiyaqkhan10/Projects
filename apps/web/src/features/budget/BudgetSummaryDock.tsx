@@ -6,11 +6,13 @@ import { CatalogItem } from "../../schemas/catalog";
 interface BudgetSummaryDockProps {
   objects: SceneObject[];
   catalogMap: Map<string, CatalogItem>;
+  onOpenOfficialEstimate?: () => void;
 }
 
 export const BudgetSummaryDock: React.FC<BudgetSummaryDockProps> = ({
   objects,
   catalogMap,
+  onOpenOfficialEstimate,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -88,13 +90,22 @@ export const BudgetSummaryDock: React.FC<BudgetSummaryDockProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
           <div className="text-right">
             <span className="text-[10px] text-gray-400 uppercase tracking-wider block">Estimated Total</span>
             <span className="text-lg font-bold font-mono text-gray-900 tracking-tight">
               {formatINR(totalPaise)}
             </span>
           </div>
+
+          {onOpenOfficialEstimate && (
+            <button
+              onClick={onOpenOfficialEstimate}
+              className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm flex items-center space-x-1"
+            >
+              <span>Official Snapshot</span>
+            </button>
+          )}
 
           <button
             onClick={() => setIsExpanded(!isExpanded)}

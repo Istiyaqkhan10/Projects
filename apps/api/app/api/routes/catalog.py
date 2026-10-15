@@ -2,12 +2,13 @@ import json
 from pathlib import Path
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query
+from app.core.config import get_shared_fixtures_dir
 from app.schemas.catalog import CatalogItemResponse
 
 router = APIRouter()
 
 # Path to shared fixtures sample catalog items
-FIXTURES_PATH = Path(__file__).resolve().parents[5] / "packages" / "shared-fixtures" / "validation-cases" / "sample_catalog_items.json"
+FIXTURES_PATH = get_shared_fixtures_dir() / "validation-cases" / "sample_catalog_items.json"
 
 
 def load_fixtures_catalog() -> List[dict]:

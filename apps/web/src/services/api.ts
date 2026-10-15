@@ -53,6 +53,40 @@ export interface SceneResponseData {
   scene: CanonicalScene;
 }
 
+export interface EstimateLineItem {
+  instance_id: string;
+  catalog_item_id: string;
+  name: string;
+  quantity: number;
+  unit_price_paise: number;
+  line_total_paise: number;
+}
+
+export interface EstimateSnapshot {
+  subtotal_paise: number;
+  gst_rate_percent: number;
+  cgst_paise: number;
+  sgst_paise: number;
+  tax_paise: number;
+  total_paise: number;
+  currency: string;
+  lines: EstimateLineItem[];
+  assumptions: string;
+}
+
+export interface EstimateResponse {
+  id: string;
+  project_id: string;
+  scene_revision: number;
+  subtotal_paise: number;
+  tax_paise: number;
+  total_paise: number;
+  currency: string;
+  assumptions?: string;
+  estimate_snapshot: EstimateSnapshot;
+  created_at: string;
+}
+
 export class ConflictError extends Error {
   status: number = 409;
   currentRevision?: number;
@@ -174,6 +208,35 @@ export const api = {
     });
     if (!res.ok) {
       throw new Error(`Validation failed with status: ${res.status}`);
+    }
+    return res.json();
+  },
+
+  async createEstimate(projectId: string, sceneRevision?: number): Promise<EstimateResponse> {
+    const res = await fetch(`${API_BASE_URL}/projects/${projectId}/estimates`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scene_revision: sceneRevision }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Failed to create estimate: ${res.status}`);
+    }
+    return res.json();
+  },
+
+  async listEstimates(projectId: string): Promise<EstimateResponse[]> {
+    const res = await fetch(`${API_BASE_URL}/projects/${projectId}/estimates`);
+    if (!res.ok) {
+      throw new Error(`Failed to list estimates: ${res.status}`);
+    }
+    return res.json();
+  },
+
+  async getEstimate(estimateId: string): Promise<EstimateResponse> {
+    const res = await fetch(`${API_BASE_URL}/estimates/${estimateId}`);
+    if (!res.ok) {
+      throw new Error(`Failed to get estimate: ${res.status}`);
     }
     return res.json();
   },

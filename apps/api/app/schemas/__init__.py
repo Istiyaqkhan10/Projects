@@ -4,6 +4,10 @@ from app.schemas.catalog import (
     CatalogItemResponse,
 )
 from app.schemas.common import ErrorResponse, HealthResponse
+from app.schemas.estimate import (
+    EstimateCreateRequest,
+    EstimateResponse,
+)
 from app.schemas.project import (
     ProjectCreate,
     ProjectResponse,
@@ -37,4 +41,6 @@ __all__ = [
     "ProjectResponse",
     "RoomCreate",
     "RoomResponse",
+    "EstimateCreateRequest",
+    "EstimateResponse",
 ]

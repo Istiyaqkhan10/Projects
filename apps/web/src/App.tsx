@@ -5,6 +5,7 @@ import { Room3DViewport } from "./features/room-editor/Room3DViewport";
 import { FurnitureCatalogDrawer } from "./features/furniture-catalog/FurnitureCatalogDrawer";
 import { InspectorPanel } from "./features/room-editor/InspectorPanel";
 import { BudgetSummaryDock } from "./features/budget/BudgetSummaryDock";
+import { EstimateModal } from "./features/budget/EstimateModal";
 import { CreateProjectModal } from "./features/projects/CreateProjectModal";
 import { CanonicalScene, SceneObject } from "./schemas/scene";
 import { CatalogItem } from "./schemas/catalog";
@@ -30,6 +31,7 @@ export const App: React.FC = () => {
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEstimateModalOpen, setIsEstimateModalOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -359,7 +361,17 @@ export const App: React.FC = () => {
       </div>
 
       {/* Bottom Budget Estimation Dock */}
-      <BudgetSummaryDock objects={scene.objects} catalogMap={catalogMap} />
+      <BudgetSummaryDock
+        objects={scene.objects}
+        catalogMap={catalogMap}
+        onOpenOfficialEstimate={() => {
+          if (!activeProjectId) {
+            alert("Please create or select a project before generating an official estimate snapshot.");
+            return;
+          }
+          setIsEstimateModalOpen(true);
+        }}
+      />
 
       {/* Create Project Modal */}
       <CreateProjectModal
@@ -367,6 +379,17 @@ export const App: React.FC = () => {
         onClose={() => setIsCreateModalOpen(false)}
         onCreate={handleCreateProject}
       />
+
+      {/* Official Estimate & History Modal */}
+      {activeProjectId && (
+        <EstimateModal
+          isOpen={isEstimateModalOpen}
+          onClose={() => setIsEstimateModalOpen(false)}
+          projectId={activeProjectId}
+          projectName={projects.find((p) => p.id === activeProjectId)?.name || "Current Project"}
+          currentRevision={revision}
+        />
+      )}
     </div>
   );
 };

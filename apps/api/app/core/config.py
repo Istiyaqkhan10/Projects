@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -49,3 +50,14 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+def get_shared_fixtures_dir() -> Path:
+    from pathlib import Path
+    current = Path(__file__).resolve()
+    for parent in [current] + list(current.parents):
+        candidate = parent / "packages" / "shared-fixtures"
+        if candidate.exists() and candidate.is_dir():
+            return candidate
+    return Path(__file__).resolve().parents[4] / "packages" / "shared-fixtures"
+
