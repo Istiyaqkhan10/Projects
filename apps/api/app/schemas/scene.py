@@ -1,4 +1,5 @@
-from typing import List, Literal
+from typing import Literal
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -38,7 +39,7 @@ class CanonicalScene(BaseModel):
     schema_version: int = Field(default=1, ge=1)
     units: Literal["m"] = "m"
     room: RoomDimensions
-    objects: List[SceneObject] = Field(default_factory=list)
+    objects: list[SceneObject] = Field(default_factory=list)
 
 
 class SceneUpdatePayload(BaseModel):

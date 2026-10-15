@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "interiorai_db"
 
     # Explicit Database URL override
-    DATABASE_URL: Optional[str] = None
+    DATABASE_URL: str | None = None
 
     @property
     def async_database_uri(self) -> str:
@@ -38,7 +38,7 @@ class Settings(BaseSettings):
 
     # AI Provider
     AI_PROVIDER: str = "mock"
-    AI_PROVIDER_API_KEY: Optional[str] = None
+    AI_PROVIDER_API_KEY: str | None = None
     AI_PROVIDER_MODEL: str = "gemini-2.5-flash"
     AI_REQUEST_TIMEOUT_SECONDS: int = 30
 

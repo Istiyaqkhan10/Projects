@@ -1,9 +1,9 @@
 import math
-from typing import List, Tuple
+
 from app.schemas.scene import CanonicalScene, SceneObject
 
 
-def get_oriented_bounding_box_corners(obj: SceneObject) -> List[Tuple[float, float]]:
+def get_oriented_bounding_box_corners(obj: SceneObject) -> list[tuple[float, float]]:
     """
     Computes the 4 corners of the object's footprint in the XZ floor plane,
     accounting for position (center) and rotation_y_deg.
@@ -35,7 +35,7 @@ def get_oriented_bounding_box_corners(obj: SceneObject) -> List[Tuple[float, flo
     return world_corners
 
 
-def is_object_inside_room(obj: SceneObject, room_width_m: float, room_length_m: float, tolerance: float = 1e-4) -> Tuple[bool, List[str]]:
+def is_object_inside_room(obj: SceneObject, room_width_m: float, room_length_m: float, tolerance: float = 1e-4) -> tuple[bool, list[str]]:
     """
     Checks if all 4 corners of the rotated object footprint are inside the room boundaries.
     Floor boundary: X in [0, room_width_m], Z in [0, room_length_m].
@@ -57,11 +57,11 @@ def is_object_inside_room(obj: SceneObject, room_width_m: float, room_length_m: 
     return (len(errors) == 0, errors)
 
 
-def validate_scene_geometry(scene: CanonicalScene) -> Tuple[bool, List[str]]:
+def validate_scene_geometry(scene: CanonicalScene) -> tuple[bool, list[str]]:
     """
     Validates boundary containment for all furniture objects in the canonical scene.
     """
-    all_errors: List[str] = []
+    all_errors: list[str] = []
 
     if scene.room.width_m <= 0 or scene.room.length_m <= 0 or scene.room.height_m <= 0:
         all_errors.append("Room dimensions must be strictly positive.")

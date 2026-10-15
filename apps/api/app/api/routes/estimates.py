@@ -1,4 +1,4 @@
-from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,7 +17,7 @@ router = APIRouter()
 )
 async def create_estimate(
     project_id: str,
-    payload: Optional[EstimateCreateRequest] = None,
+    payload: EstimateCreateRequest | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> EstimateResponse:
     scene_rev = payload.scene_revision if payload else None
@@ -32,12 +32,12 @@ async def create_estimate(
 
 @router.get(
     "/projects/{project_id}/estimates",
-    response_model=List[EstimateResponse],
+    response_model=list[EstimateResponse],
     tags=["estimates"],
 )
 async def list_project_estimates(
     project_id: str, db: AsyncSession = Depends(get_db)
-) -> List[EstimateResponse]:
+) -> list[EstimateResponse]:
     estimates = await EstimateRepository.list_estimates(db, project_id)
     return [EstimateResponse.model_validate(e) for e in estimates]
 

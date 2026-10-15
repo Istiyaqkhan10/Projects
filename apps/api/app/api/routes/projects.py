@@ -1,4 +1,4 @@
-from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,7 +8,6 @@ from app.schemas.project import (
     ProjectCreate,
     ProjectResponse,
     ProjectUpdate,
-    RoomCreate,
     RoomResponse,
     RoomUpdate,
 )
@@ -26,8 +25,8 @@ async def create_project(
     return ProjectResponse.model_validate(project)
 
 
-@router.get("", response_model=List[ProjectResponse])
-async def list_projects(db: AsyncSession = Depends(get_db)) -> List[ProjectResponse]:
+@router.get("", response_model=list[ProjectResponse])
+async def list_projects(db: AsyncSession = Depends(get_db)) -> list[ProjectResponse]:
     projects = await ProjectRepository.list_projects(db)
     return [ProjectResponse.model_validate(p) for p in projects]
 

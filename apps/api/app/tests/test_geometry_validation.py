@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+
 from app.schemas.scene import CanonicalScene
 from app.services.geometry import validate_scene_geometry
 
@@ -8,7 +9,7 @@ FIXTURES_DIR = Path(__file__).resolve().parents[4] / "packages" / "shared-fixtur
 
 def test_valid_scene_geometry():
     path = FIXTURES_DIR / "valid_living_room.json"
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
 
     scene = CanonicalScene(**data)
@@ -19,7 +20,7 @@ def test_valid_scene_geometry():
 
 def test_boundary_clash_geometry():
     path = FIXTURES_DIR / "boundary_clash.json"
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
 
     scene = CanonicalScene(**data)

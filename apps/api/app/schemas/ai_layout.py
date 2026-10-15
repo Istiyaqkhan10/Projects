@@ -1,20 +1,22 @@
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
+
 from app.schemas.scene import ObjectDimensions, ObjectPosition
 
 
 class AILayoutRequest(BaseModel):
-    prompt: Optional[str] = Field(
+    prompt: str | None = Field(
         None,
         description="User preference or prompt describing desired layout.",
         max_length=500,
     )
-    room_type: Optional[str] = Field(
+    room_type: str | None = Field(
         "living_room",
         description="Type of room: living_room, bedroom, or home_office.",
     )
-    preferred_item_ids: Optional[List[str]] = Field(
+    preferred_item_ids: list[str] | None = Field(
         None,
         description="Optional list of catalog item IDs to prioritize.",
     )
@@ -34,11 +36,11 @@ class AILayoutProposalResponse(BaseModel):
     id: str
     project_id: str
     base_scene_revision: int
-    request_parameters: Dict[str, Any]
+    request_parameters: dict[str, Any]
     explanation: str
-    suggested_objects: List[SuggestedObject]
+    suggested_objects: list[SuggestedObject]
     validation_status: str
-    validation_errors: List[str] = []
+    validation_errors: list[str] = []
     created_at: datetime
 
 

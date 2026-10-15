@@ -1,7 +1,9 @@
 import json
 from pathlib import Path
+
 import pytest
 from pydantic import ValidationError
+
 from app.schemas.scene import CanonicalScene, RoomDimensions
 
 FIXTURE_PATH = (
@@ -15,7 +17,7 @@ FIXTURE_PATH = (
 
 def test_valid_living_room_fixture():
     assert FIXTURE_PATH.exists(), f"Fixture not found at {FIXTURE_PATH}"
-    with open(FIXTURE_PATH, "r", encoding="utf-8") as f:
+    with open(FIXTURE_PATH, encoding="utf-8") as f:
         data = json.load(f)
 
     scene = CanonicalScene(**data)
@@ -36,7 +38,7 @@ def test_invalid_negative_room_dimensions():
 
 
 def test_rotation_normalization():
-    with open(FIXTURE_PATH, "r", encoding="utf-8") as f:
+    with open(FIXTURE_PATH, encoding="utf-8") as f:
         data = json.load(f)
 
     data["objects"][0]["rotation_y_deg"] = 450.0

@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import List, Optional
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class ProjectCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: str | None = None
     room_name: str = Field(default="Living Room", min_length=1, max_length=255)
     room_width_m: float = Field(default=5.0, gt=0)
     room_length_m: float = Field(default=4.0, gt=0)
@@ -13,8 +13,8 @@ class ProjectCreate(BaseModel):
 
 
 class ProjectUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = None
+    name: str | None = Field(None, min_length=1, max_length=255)
+    description: str | None = None
 
 
 class RoomCreate(BaseModel):
@@ -25,10 +25,10 @@ class RoomCreate(BaseModel):
 
 
 class RoomUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=1, max_length=255)
-    width_m: Optional[float] = Field(None, gt=0)
-    length_m: Optional[float] = Field(None, gt=0)
-    height_m: Optional[float] = Field(None, gt=0)
+    name: str | None = Field(None, min_length=1, max_length=255)
+    width_m: float | None = Field(None, gt=0)
+    length_m: float | None = Field(None, gt=0)
+    height_m: float | None = Field(None, gt=0)
 
 
 class RoomResponse(BaseModel):
@@ -46,12 +46,12 @@ class RoomResponse(BaseModel):
 class ProjectResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str
-    owner_id: Optional[str] = None
+    owner_id: str | None = None
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     created_at: datetime
     updated_at: datetime
-    rooms: List[RoomResponse] = Field(default_factory=list)
+    rooms: list[RoomResponse] = Field(default_factory=list)
 
 
 class ProjectDetailResponse(ProjectResponse):

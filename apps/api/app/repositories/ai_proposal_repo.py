@@ -1,11 +1,11 @@
 import uuid
-from typing import Any, Dict, List, Optional
+
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.entities import AILayoutProposal, Scene
 from app.repositories.project_repo import ProjectRepository
-from app.schemas.ai_layout import AILayoutRequest, SuggestedObject
+from app.schemas.ai_layout import AILayoutRequest
 from app.schemas.scene import CanonicalScene, RoomDimensions, SceneObject
 from app.services.ai_layout import AILayoutService
 
@@ -67,7 +67,7 @@ class AILayoutProposalRepository:
     @staticmethod
     async def list_proposals(
         session: AsyncSession, project_id: str
-    ) -> List[AILayoutProposal]:
+    ) -> list[AILayoutProposal]:
         stmt = (
             select(AILayoutProposal)
             .where(AILayoutProposal.project_id == project_id)
@@ -79,7 +79,7 @@ class AILayoutProposalRepository:
     @staticmethod
     async def get_proposal(
         session: AsyncSession, proposal_id: str
-    ) -> Optional[AILayoutProposal]:
+    ) -> AILayoutProposal | None:
         stmt = select(AILayoutProposal).where(AILayoutProposal.id == proposal_id)
         res = await session.execute(stmt)
         return res.scalar_one_or_none()
@@ -111,7 +111,7 @@ class AILayoutProposalRepository:
         suggested_raw = doc.get("suggested_objects", [])
         current_room = latest_scene.scene_document.get("room", {})
 
-        new_objects: List[SceneObject] = []
+        new_objects: list[SceneObject] = []
         for s in suggested_raw:
             new_objects.append(
                 SceneObject(

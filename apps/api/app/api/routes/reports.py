@@ -1,4 +1,4 @@
-from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,7 +23,7 @@ router = APIRouter()
 )
 async def download_project_report(
     project_id: str,
-    scene_revision: Optional[int] = Query(None, description="Optional scene revision to export. Defaults to latest."),
+    scene_revision: int | None = Query(None, description="Optional scene revision to export. Defaults to latest."),
     session: AsyncSession = Depends(get_db),
 ) -> Response:
     # 1. Fetch Project
@@ -44,6 +44,7 @@ async def download_project_report(
     # 3. Fetch Scene
     if scene_revision is not None:
         from sqlalchemy import select
+
         from app.models.entities import Scene
 
         stmt = select(Scene).where(

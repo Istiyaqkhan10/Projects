@@ -1,7 +1,9 @@
 import json
 from pathlib import Path
+
 import pytest
 from pydantic import ValidationError
+
 from app.schemas.catalog import CatalogItemCreate, CatalogItemResponse
 
 FIXTURE_PATH = (
@@ -15,7 +17,7 @@ FIXTURE_PATH = (
 
 def test_catalog_items_fixture():
     assert FIXTURE_PATH.exists(), f"Fixture not found at {FIXTURE_PATH}"
-    with open(FIXTURE_PATH, "r", encoding="utf-8") as f:
+    with open(FIXTURE_PATH, encoding="utf-8") as f:
         items = json.load(f)
 
     assert len(items) >= 2

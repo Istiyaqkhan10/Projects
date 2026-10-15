@@ -1,4 +1,4 @@
-from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -62,13 +62,13 @@ async def generate_proposal(
 
 @router.get(
     "/{project_id}/ai-proposals",
-    response_model=List[AILayoutProposalResponse],
+    response_model=list[AILayoutProposalResponse],
     summary="List all AI layout proposals generated for a project",
 )
 async def list_proposals(
     project_id: str,
     session: AsyncSession = Depends(get_db),
-) -> List[AILayoutProposalResponse]:
+) -> list[AILayoutProposalResponse]:
     proposals = await AILayoutProposalRepository.list_proposals(
         session=session, project_id=project_id
     )

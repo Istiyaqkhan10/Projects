@@ -1,11 +1,12 @@
 from datetime import datetime
-from typing import Optional
+
 from pydantic import BaseModel, ConfigDict, Field
+
 from app.services.pricing import EstimateSnapshot
 
 
 class EstimateCreateRequest(BaseModel):
-    scene_revision: Optional[int] = Field(
+    scene_revision: int | None = Field(
         None, description="Specific scene revision to estimate. Defaults to latest."
     )
 
@@ -20,6 +21,6 @@ class EstimateResponse(BaseModel):
     tax_paise: int
     total_paise: int
     currency: str = "INR"
-    assumptions: Optional[str] = None
+    assumptions: str | None = None
     estimate_snapshot: EstimateSnapshot
     created_at: datetime

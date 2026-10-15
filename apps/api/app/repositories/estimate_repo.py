@@ -1,6 +1,5 @@
 import json
-from pathlib import Path
-from typing import Dict, List, Optional
+
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,10 +16,10 @@ FIXTURES_PATH = (
 )
 
 
-def load_catalog_prices() -> Dict[str, dict]:
-    catalog_prices: Dict[str, dict] = {}
+def load_catalog_prices() -> dict[str, dict]:
+    catalog_prices: dict[str, dict] = {}
     if FIXTURES_PATH.exists():
-        with open(FIXTURES_PATH, "r", encoding="utf-8") as f:
+        with open(FIXTURES_PATH, encoding="utf-8") as f:
             items = json.load(f)
             for item in items:
                 catalog_prices[item["id"]] = item
@@ -32,7 +31,7 @@ class EstimateRepository:
     async def create_estimate_for_project(
         session: AsyncSession,
         project_id: str,
-        scene_revision: Optional[int] = None,
+        scene_revision: int | None = None,
     ) -> Estimate:
         # 1. Fetch requested or latest scene
         if scene_revision is not None:
@@ -78,7 +77,7 @@ class EstimateRepository:
     @staticmethod
     async def list_estimates(
         session: AsyncSession, project_id: str
-    ) -> List[Estimate]:
+    ) -> list[Estimate]:
         stmt = (
             select(Estimate)
             .where(Estimate.project_id == project_id)
@@ -90,7 +89,7 @@ class EstimateRepository:
     @staticmethod
     async def get_estimate(
         session: AsyncSession, estimate_id: str
-    ) -> Optional[Estimate]:
+    ) -> Estimate | None:
         stmt = select(Estimate).where(Estimate.id == estimate_id)
         res = await session.execute(stmt)
         return res.scalar_one_or_none()

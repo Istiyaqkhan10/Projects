@@ -1,6 +1,8 @@
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from app.api.routes.ai_proposals import router as ai_proposals_router
 from app.api.routes.catalog import router as catalog_router
 from app.api.routes.estimates import router as estimates_router

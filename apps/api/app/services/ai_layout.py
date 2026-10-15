@@ -1,7 +1,7 @@
 import json
-import uuid
-from typing import Any, Dict, List, Optional, Tuple
-from app.core.config import get_shared_fixtures_dir, settings
+from typing import Any
+
+from app.core.config import get_shared_fixtures_dir
 from app.schemas.ai_layout import SuggestedObject
 from app.schemas.scene import (
     ObjectDimensions,
@@ -18,10 +18,10 @@ FIXTURES_PATH = (
 )
 
 
-def load_catalog_map() -> Dict[str, Dict[str, Any]]:
-    catalog_map: Dict[str, Dict[str, Any]] = {}
+def load_catalog_map() -> dict[str, dict[str, Any]]:
+    catalog_map: dict[str, dict[str, Any]] = {}
     if FIXTURES_PATH.exists():
-        with open(FIXTURES_PATH, "r", encoding="utf-8") as f:
+        with open(FIXTURES_PATH, encoding="utf-8") as f:
             items = json.load(f)
             for item in items:
                 catalog_map[item["id"]] = item
@@ -33,16 +33,16 @@ class AILayoutService:
     def generate_layout(
         cls,
         room: RoomDimensions,
-        prompt: Optional[str] = None,
-        room_type: Optional[str] = "living_room",
-        preferred_item_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, List[SuggestedObject], str, List[str]]:
+        prompt: str | None = None,
+        room_type: str | None = "living_room",
+        preferred_item_ids: list[str] | None = None,
+    ) -> tuple[str, list[SuggestedObject], str, list[str]]:
         """
         Generates structured, validated furniture layout proposal.
         Returns: (explanation, suggested_objects, validation_status, validation_errors)
         """
         catalog = load_catalog_map()
-        suggested: List[SuggestedObject] = []
+        suggested: list[SuggestedObject] = []
         explanation = ""
 
         # Determine strategy based on room_type
@@ -237,7 +237,7 @@ class AILayoutService:
             explanation += f" User preference considered: '{prompt.strip()}'."
 
         # Rigorous Geometric Validation of AI Proposal
-        errors: List[str] = []
+        errors: list[str] = []
         for idx, s in enumerate(suggested):
             temp_obj = SceneObject(
                 instance_id=f"ai-{idx}",

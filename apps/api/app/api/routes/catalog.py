@@ -1,7 +1,7 @@
 import json
-from pathlib import Path
-from typing import List, Optional
+
 from fastapi import APIRouter, HTTPException, Query
+
 from app.core.config import get_shared_fixtures_dir
 from app.schemas.catalog import CatalogItemResponse
 
@@ -11,18 +11,18 @@ router = APIRouter()
 FIXTURES_PATH = get_shared_fixtures_dir() / "validation-cases" / "sample_catalog_items.json"
 
 
-def load_fixtures_catalog() -> List[dict]:
+def load_fixtures_catalog() -> list[dict]:
     if FIXTURES_PATH.exists():
-        with open(FIXTURES_PATH, "r", encoding="utf-8") as f:
+        with open(FIXTURES_PATH, encoding="utf-8") as f:
             return json.load(f)
     return []
 
 
-@router.get("", response_model=List[CatalogItemResponse])
+@router.get("", response_model=list[CatalogItemResponse])
 async def list_catalog(
-    category: Optional[str] = Query(None, description="Filter by furniture category"),
-    search: Optional[str] = Query(None, description="Search query for furniture name/description"),
-) -> List[CatalogItemResponse]:
+    category: str | None = Query(None, description="Filter by furniture category"),
+    search: str | None = Query(None, description="Search query for furniture name/description"),
+) -> list[CatalogItemResponse]:
     """
     Returns furniture catalog items with dimensions and paise pricing.
     """

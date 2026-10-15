@@ -1,10 +1,10 @@
 import io
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import inch
 from reportlab.platypus import (
     HRFlowable,
     Paragraph,
@@ -22,19 +22,19 @@ def format_inr(paise: int) -> str:
 
 def build_project_pdf_report(
     project_name: str,
-    project_description: Optional[str],
+    project_description: str | None,
     room_name: str,
     room_width_m: float,
     room_length_m: float,
     room_height_m: float,
     scene_revision: int,
-    objects: List[Dict[str, Any]],
-    catalog_map: Dict[str, Dict[str, Any]],
+    objects: list[dict[str, Any]],
+    catalog_map: dict[str, dict[str, Any]],
     subtotal_paise: int,
     cgst_paise: int,
     sgst_paise: int,
     total_paise: int,
-    assumptions: Optional[str] = None,
+    assumptions: str | None = None,
 ) -> bytes:
     """
     Generates a professional interior design and budget specification PDF.

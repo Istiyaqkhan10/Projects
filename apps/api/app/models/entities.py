@@ -1,5 +1,6 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from sqlalchemy import (
     BigInteger,
     Boolean,
@@ -14,11 +15,13 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.sqlite import JSON as SQLITE_JSON
 from sqlalchemy.orm import relationship
+
 from app.db.base import Base
 
 # Universal JSON type compatible with both PostgreSQL and SQLite
 try:
-    from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
+    from sqlalchemy.dialects.postgresql import JSONB
+    from sqlalchemy.dialects.postgresql import UUID as PG_UUID
     JSON_TYPE = JSONB
     UUID_TYPE = PG_UUID(as_uuid=True)
 except ImportError:
@@ -27,7 +30,7 @@ except ImportError:
 
 
 def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def gen_uuid_str() -> str:

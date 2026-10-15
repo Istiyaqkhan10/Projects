@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, status
+
+from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import List
+
 from app.schemas.scene import CanonicalScene
 from app.services.geometry import validate_scene_geometry
 
@@ -9,7 +10,7 @@ router = APIRouter()
 
 class GeometryValidationResult(BaseModel):
     is_valid: bool
-    errors: List[str]
+    errors: list[str]
 
 
 @router.post("/validate", response_model=GeometryValidationResult)

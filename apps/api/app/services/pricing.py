@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -19,7 +20,7 @@ class EstimateSnapshot(BaseModel):
     tax_paise: int
     total_paise: int
     currency: str = "INR"
-    lines: List[EstimateLineItem]
+    lines: list[EstimateLineItem]
     assumptions: str = (
         "Preliminary estimate based on illustrative catalog prices. "
         "Includes standard 18% GST (9% CGST + 9% SGST). "
@@ -28,14 +29,14 @@ class EstimateSnapshot(BaseModel):
 
 
 def calculate_estimate(
-    scene_objects: List[Dict[str, Any]],
-    catalog_prices: Dict[str, Dict[str, Any]],
+    scene_objects: list[dict[str, Any]],
+    catalog_prices: dict[str, dict[str, Any]],
 ) -> EstimateSnapshot:
     """
     Computes preliminary financial estimate in integer paise using exact arithmetic.
     """
     subtotal_paise = 0
-    lines: List[EstimateLineItem] = []
+    lines: list[EstimateLineItem] = []
 
     for obj in scene_objects:
         cid = obj["catalog_item_id"]

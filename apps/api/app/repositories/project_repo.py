@@ -1,4 +1,3 @@
-from typing import List, Optional, Tuple
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -19,7 +18,7 @@ class ProjectRepository:
     async def create_project_with_room_and_scene(
         session: AsyncSession,
         data: ProjectCreate,
-        owner_id: Optional[str] = None,
+        owner_id: str | None = None,
     ) -> Project:
         # 1. Create Project
         project = Project(
@@ -67,7 +66,7 @@ class ProjectRepository:
         return await ProjectRepository.get_project(session, project.id)
 
     @staticmethod
-    async def list_projects(session: AsyncSession) -> List[Project]:
+    async def list_projects(session: AsyncSession) -> list[Project]:
         stmt = (
             select(Project)
             .options(selectinload(Project.rooms))
@@ -77,7 +76,7 @@ class ProjectRepository:
         return list(res.scalars().all())
 
     @staticmethod
-    async def get_project(session: AsyncSession, project_id: str) -> Optional[Project]:
+    async def get_project(session: AsyncSession, project_id: str) -> Project | None:
         stmt = (
             select(Project)
             .options(selectinload(Project.rooms))
@@ -89,7 +88,7 @@ class ProjectRepository:
     @staticmethod
     async def update_project(
         session: AsyncSession, project_id: str, data: ProjectUpdate
-    ) -> Optional[Project]:
+    ) -> Project | None:
         project = await ProjectRepository.get_project(session, project_id)
         if not project:
             return None
@@ -115,7 +114,7 @@ class ProjectRepository:
     @staticmethod
     async def get_room(
         session: AsyncSession, project_id: str, room_id: str
-    ) -> Optional[Room]:
+    ) -> Room | None:
         stmt = select(Room).where(Room.id == room_id, Room.project_id == project_id)
         res = await session.execute(stmt)
         return res.scalar_one_or_none()
@@ -123,7 +122,7 @@ class ProjectRepository:
     @staticmethod
     async def update_room(
         session: AsyncSession, project_id: str, room_id: str, data: RoomUpdate
-    ) -> Optional[Room]:
+    ) -> Room | None:
         room = await ProjectRepository.get_room(session, project_id, room_id)
         if not room:
             return None
@@ -158,7 +157,7 @@ class ProjectRepository:
     @staticmethod
     async def get_latest_scene(
         session: AsyncSession, project_id: str
-    ) -> Optional[Scene]:
+    ) -> Scene | None:
         stmt = (
             select(Scene)
             .where(Scene.project_id == project_id)

@@ -1,5 +1,7 @@
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
+
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
 from app.core.config import settings
 
 # If testing with SQLite or postgres
@@ -29,7 +31,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_db() -> None:
-    from app.db.base import Base
     import app.models  # noqa: F401
+    from app.db.base import Base
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

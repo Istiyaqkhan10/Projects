@@ -12,6 +12,8 @@
     "lint:web": "npm --workspace=apps/web run lint",
     "test:web": "npm --workspace=apps/web run test",
     "typecheck:web": "npm --workspace=apps/web run typecheck",
+    "test:api": "pytest -c apps/api/pyproject.toml apps/api",
+    "lint:api": "ruff check apps/api",
     "test": "npm --workspace=apps/web run test"
   },
   "keywords": [
