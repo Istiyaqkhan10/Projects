@@ -1,6 +1,15 @@
 import React from "react";
-import { Sliders, Maximize2, Trash2, RotateCw } from "lucide-react";
+import {
+  Sliders,
+  Maximize2,
+  Trash2,
+  RotateCw,
+  AlertTriangle,
+  Move,
+  Compass,
+} from "lucide-react";
 import { CanonicalScene, SceneObject } from "../../schemas/scene";
+import { checkObjectBoundary, snapToGrid } from "../../utils/geometry";
 
 interface InspectorPanelProps {
   scene: CanonicalScene;
@@ -19,33 +28,108 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
 }) => {
   const selectedObject = scene.objects.find((o) => o.instance_id === selectedInstanceId);
 
+  const boundaryStatus = selectedObject
+    ? checkObjectBoundary(selectedObject, scene.room.width_m, scene.room.length_m)
+    : null;
+
+  const handleCenterObject = () => {
+    if (!selectedObject) return;
+    onUpdateObject({
+      ...selectedObject,
+      position: {
+        ...selectedObject.position,
+        x_m: parseFloat((scene.room.width_m / 2).toFixed(2)),
+        z_m: parseFloat((scene.room.length_m / 2).toFixed(2)),
+      },
+    });
+  };
+
   return (
-    <aside className="w-72 bg-white border-l border-gray-200 flex flex-col h-full select-none p-4 overflow-y-auto">
+    <aside className="w-80 bg-white border-l border-gray-200 flex flex-col h-full select-none p-4 overflow-y-auto">
       {/* Selected Furniture Inspector */}
       {selectedObject ? (
         <div className="space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-gray-100">
             <div>
-              <span className="text-[10px] font-mono text-orange-600 uppercase">Selected Object</span>
+              <span className="text-[10px] font-mono text-orange-600 uppercase font-semibold">
+                Furniture Inspector
+              </span>
               <h3 className="text-xs font-bold text-gray-900">{selectedObject.instance_id}</h3>
             </div>
             <button
               onClick={() => onRemoveObject(selectedObject.instance_id)}
-              className="p-1.5 text-rose-500 hover:bg-rose-50 rounded transition-colors"
-              title="Remove object"
+              className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+              title="Remove object (Delete key)"
             >
               <Trash2 className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Position Controls */}
+          {/* Boundary Breach Alert */}
+          {boundaryStatus && !boundaryStatus.isInside && (
+            <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-[11px] space-y-1">
+              <div className="flex items-center font-bold text-rose-700">
+                <AlertTriangle className="w-3.5 h-3.5 mr-1 text-rose-600" />
+                <span>Boundary Breach</span>
+              </div>
+              <ul className="list-disc list-inside text-[10px] space-y-0.5 text-rose-700">
+                {boundaryStatus.errors.map((err, idx) => (
+                  <li key={idx}>{err}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Position on Floor */}
           <div>
-            <label className="text-xs font-semibold text-gray-700 block mb-1">
-              Position on Floor (Meters)
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold text-gray-700 flex items-center">
+                <Move className="w-3.5 h-3.5 mr-1 text-gray-400" />
+                Position on Floor (m)
+              </label>
+              <button
+                onClick={handleCenterObject}
+                className="text-[10px] text-orange-600 hover:text-orange-700 font-medium"
+              >
+                Center
+              </button>
+            </div>
+
             <div className="grid grid-cols-2 gap-2">
-              <div>
-                <span className="text-[10px] text-gray-400">X (Width)</span>
+              <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-medium text-gray-500">X (Width)</span>
+                  <div className="flex space-x-1">
+                    <button
+                      onClick={() =>
+                        onUpdateObject({
+                          ...selectedObject,
+                          position: {
+                            ...selectedObject.position,
+                            x_m: parseFloat(snapToGrid(selectedObject.position.x_m - 0.1, 0.05).toFixed(2)),
+                          },
+                        })
+                      }
+                      className="px-1 text-[10px] bg-white border border-gray-200 rounded hover:bg-gray-100"
+                    >
+                      -
+                    </button>
+                    <button
+                      onClick={() =>
+                        onUpdateObject({
+                          ...selectedObject,
+                          position: {
+                            ...selectedObject.position,
+                            x_m: parseFloat(snapToGrid(selectedObject.position.x_m + 0.1, 0.05).toFixed(2)),
+                          },
+                        })
+                      }
+                      className="px-1 text-[10px] bg-white border border-gray-200 rounded hover:bg-gray-100"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
                 <input
                   type="number"
                   step="0.1"
@@ -61,11 +145,44 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                       },
                     })
                   }
-                  className="w-full px-2 py-1 text-xs border border-gray-200 rounded font-mono"
+                  className="w-full px-2 py-1 text-xs bg-white border border-gray-200 rounded font-mono font-medium"
                 />
               </div>
-              <div>
-                <span className="text-[10px] text-gray-400">Z (Length)</span>
+
+              <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-medium text-gray-500">Z (Length)</span>
+                  <div className="flex space-x-1">
+                    <button
+                      onClick={() =>
+                        onUpdateObject({
+                          ...selectedObject,
+                          position: {
+                            ...selectedObject.position,
+                            z_m: parseFloat(snapToGrid(selectedObject.position.z_m - 0.1, 0.05).toFixed(2)),
+                          },
+                        })
+                      }
+                      className="px-1 text-[10px] bg-white border border-gray-200 rounded hover:bg-gray-100"
+                    >
+                      -
+                    </button>
+                    <button
+                      onClick={() =>
+                        onUpdateObject({
+                          ...selectedObject,
+                          position: {
+                            ...selectedObject.position,
+                            z_m: parseFloat(snapToGrid(selectedObject.position.z_m + 0.1, 0.05).toFixed(2)),
+                          },
+                        })
+                      }
+                      className="px-1 text-[10px] bg-white border border-gray-200 rounded hover:bg-gray-100"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
                 <input
                   type="number"
                   step="0.1"
@@ -81,7 +198,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                       },
                     })
                   }
-                  className="w-full px-2 py-1 text-xs border border-gray-200 rounded font-mono"
+                  className="w-full px-2 py-1 text-xs bg-white border border-gray-200 rounded font-mono font-medium"
                 />
               </div>
             </div>
@@ -89,8 +206,11 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
 
           {/* Rotation Controls */}
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-semibold text-gray-700">Rotation</label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold text-gray-700 flex items-center">
+                <Compass className="w-3.5 h-3.5 mr-1 text-gray-400" />
+                Rotation: {selectedObject.rotation_y_deg}°
+              </label>
               <button
                 onClick={() =>
                   onUpdateObject({
@@ -101,9 +221,32 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 className="flex items-center text-[10px] text-orange-600 hover:text-orange-700 font-medium"
               >
                 <RotateCw className="w-3 h-3 mr-0.5" />
-                +45°
+                +45° [R]
               </button>
             </div>
+
+            {/* Quick Angle Presets */}
+            <div className="grid grid-cols-4 gap-1 mb-2">
+              {[0, 90, 180, 270].map((deg) => (
+                <button
+                  key={deg}
+                  onClick={() =>
+                    onUpdateObject({
+                      ...selectedObject,
+                      rotation_y_deg: deg,
+                    })
+                  }
+                  className={`py-1 text-[10px] font-mono rounded border transition-colors ${
+                    selectedObject.rotation_y_deg === deg
+                      ? "bg-orange-50 border-orange-400 text-orange-700 font-bold"
+                      : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  {deg}°
+                </button>
+              ))}
+            </div>
+
             <input
               type="range"
               min="0"
@@ -118,17 +261,30 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
               }
               className="w-full accent-orange-600"
             />
-            <div className="text-right text-[10px] font-mono text-gray-500">
-              {selectedObject.rotation_y_deg}°
-            </div>
           </div>
 
-          {/* Dimensions */}
+          {/* Physical Dimensions */}
           <div className="pt-2 border-t border-gray-100">
-            <span className="text-[10px] text-gray-400 block mb-1">Dimensions</span>
-            <div className="text-xs font-mono text-gray-600 bg-gray-50 p-2 rounded">
-              W: {selectedObject.dimensions.width_m}m × D: {selectedObject.dimensions.depth_m}m × H:{" "}
-              {selectedObject.dimensions.height_m}m
+            <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block mb-1">
+              Dimensions & Catalog Ref
+            </span>
+            <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-200 text-xs space-y-1">
+              <div className="flex justify-between text-gray-600 font-mono">
+                <span>Footprint:</span>
+                <span className="font-semibold text-gray-900">
+                  {selectedObject.dimensions.width_m}m × {selectedObject.dimensions.depth_m}m
+                </span>
+              </div>
+              <div className="flex justify-between text-gray-600 font-mono">
+                <span>Height:</span>
+                <span className="font-semibold text-gray-900">
+                  {selectedObject.dimensions.height_m}m
+                </span>
+              </div>
+              <div className="flex justify-between text-gray-500 text-[10px] pt-1 border-t border-gray-200">
+                <span>Catalog ID:</span>
+                <span className="font-mono">{selectedObject.catalog_item_id}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -162,7 +318,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                     scene.room.height_m
                   )
                 }
-                className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded font-mono"
+                className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg font-mono font-medium focus:ring-1 focus:ring-orange-500"
               />
             </div>
 
@@ -183,7 +339,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                     scene.room.height_m
                   )
                 }
-                className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded font-mono"
+                className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg font-mono font-medium focus:ring-1 focus:ring-orange-500"
               />
             </div>
 
@@ -204,12 +360,12 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                     parseFloat(e.target.value) || 2.8
                   )
                 }
-                className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded font-mono"
+                className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg font-mono font-medium focus:ring-1 focus:ring-orange-500"
               />
             </div>
           </div>
 
-          <div className="p-3 bg-gray-50 rounded text-[11px] text-gray-500 flex items-start space-x-2">
+          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-[11px] text-gray-500 flex items-start space-x-2">
             <Maximize2 className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
             <span>Select any furniture in the room to edit position, rotation, or inspect dimensions.</span>
           </div>

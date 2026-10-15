@@ -10,6 +10,8 @@ import {
   Check,
   Loader2,
   AlertTriangle,
+  Undo2,
+  Redo2,
 } from "lucide-react";
 import { ProjectData } from "../services/api";
 
@@ -28,6 +30,10 @@ interface NavbarProps {
   onOpenCreateModal: () => void;
   saveStatus: SaveStatus;
   onSaveScene: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -42,9 +48,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenCreateModal,
   saveStatus,
   onSaveScene,
+  canUndo = false,
+  canRedo = false,
+  onUndo,
+  onRedo,
 }) => {
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-2.5 flex items-center justify-between sticky top-0 z-40">
+    <header className="bg-white border-b border-gray-200 px-6 py-2 flex items-center justify-between sticky top-0 z-40">
       {/* Brand & Project Info */}
       <div className="flex items-center space-x-4">
         <div className="flex items-center space-x-2">
@@ -89,6 +99,26 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span className="px-2 py-0.5 text-xs font-mono bg-gray-100 text-gray-600 rounded border border-gray-200">
             Rev #{revision}
           </span>
+        </div>
+
+        {/* Undo / Redo Actions */}
+        <div className="flex items-center space-x-1 pl-2 border-l border-gray-200">
+          <button
+            onClick={onUndo}
+            disabled={!canUndo}
+            className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded disabled:opacity-30 disabled:pointer-events-none transition-colors"
+            title="Undo (Ctrl+Z)"
+          >
+            <Undo2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={onRedo}
+            disabled={!canRedo}
+            className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded disabled:opacity-30 disabled:pointer-events-none transition-colors"
+            title="Redo (Ctrl+Y)"
+          >
+            <Redo2 className="w-4 h-4" />
+          </button>
         </div>
       </div>
 

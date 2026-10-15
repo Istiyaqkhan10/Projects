@@ -22,6 +22,10 @@ export const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>("split");
   const [apiHealthy, setApiHealthy] = useState<boolean | null>(null);
 
+  // Undo/Redo History
+  const [history, setHistory] = useState<CanonicalScene[]>([defaultSceneFixture as CanonicalScene]);
+  const [historyIndex, setHistoryIndex] = useState<number>(0);
+
   // Project Management States
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
@@ -29,6 +33,73 @@ export const App: React.FC = () => {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  // Push new state to undo/redo history
+  const pushSceneState = useCallback(
+    (newScene: CanonicalScene) => {
+      setScene(newScene);
+      setSaveStatus("unsaved");
+
+      setHistory((prev) => {
+        const upToCurrent = prev.slice(0, historyIndex + 1);
+        const nextHistory = [...upToCurrent, newScene];
+        // Cap history to 50 states
+        if (nextHistory.length > 50) nextHistory.shift();
+        return nextHistory;
+      });
+      setHistoryIndex((prev) => Math.min(prev + 1, 49));
+    },
+    [historyIndex]
+  );
+
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < history.length - 1;
+
+  const handleUndo = useCallback(() => {
+    if (!canUndo) return;
+    const targetIndex = historyIndex - 1;
+    const targetScene = history[targetIndex];
+    setHistoryIndex(targetIndex);
+    setScene(targetScene);
+    setSaveStatus("unsaved");
+  }, [canUndo, history, historyIndex]);
+
+  const handleRedo = useCallback(() => {
+    if (!canRedo) return;
+    const targetIndex = historyIndex + 1;
+    const targetScene = history[targetIndex];
+    setHistoryIndex(targetIndex);
+    setScene(targetScene);
+    setSaveStatus("unsaved");
+  }, [canRedo, history, historyIndex]);
+
+  // Global Ctrl+Z / Ctrl+Y shortcuts
+  useEffect(() => {
+    const handleGlobalShortcuts = (e: KeyboardEvent) => {
+      if (
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA"
+      ) {
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+        if (e.shiftKey) {
+          e.preventDefault();
+          handleRedo();
+        } else {
+          e.preventDefault();
+          handleUndo();
+        }
+      } else if ((e.ctrlKey || e.metaKey) && e.key === "y") {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalShortcuts);
+    return () => window.removeEventListener("keydown", handleGlobalShortcuts);
+  }, [handleUndo, handleRedo]);
 
   // Load project list & catalog on mount
   const refreshProjects = useCallback(async () => {
@@ -38,6 +109,22 @@ export const App: React.FC = () => {
       return list;
     } catch {
       return [];
+    }
+  }, []);
+
+  const handleSelectProject = useCallback(async (projId: string) => {
+    setActiveProjectId(projId);
+    setConflictMessage(null);
+    setValidationError(null);
+    try {
+      const res = await api.getProjectScene(projId);
+      setScene(res.scene);
+      setRevision(res.revision);
+      setHistory([res.scene]);
+      setHistoryIndex(0);
+      setSaveStatus("saved");
+    } catch {
+      setSaveStatus("saved");
     }
   }, []);
 
@@ -55,10 +142,8 @@ export const App: React.FC = () => {
         // Load projects from API
         const list = await refreshProjects();
         if (list.length > 0) {
-          // Select first project
           handleSelectProject(list[0].id);
         } else {
-          // Auto-create initial project if empty
           try {
             const initialProj = await api.createProject({
               name: "Living Room Design",
@@ -71,29 +156,14 @@ export const App: React.FC = () => {
             setProjects([initialProj]);
             handleSelectProject(initialProj.id);
           } catch {
-            // Ignore if creation fails
+            // Standalone mode
           }
         }
       })
       .catch(() => {
         setApiHealthy(false);
       });
-  }, [refreshProjects]);
-
-  const handleSelectProject = async (projId: string) => {
-    setActiveProjectId(projId);
-    setConflictMessage(null);
-    setValidationError(null);
-    try {
-      const res = await api.getProjectScene(projId);
-      setScene(res.scene);
-      setRevision(res.revision);
-      setSaveStatus("saved");
-    } catch {
-      // Fallback to default fixture
-      setSaveStatus("saved");
-    }
-  };
+  }, [refreshProjects, handleSelectProject]);
 
   const handleCreateProject = async (payload: CreateProjectPayload) => {
     const newProj = await api.createProject(payload);
@@ -150,33 +220,30 @@ export const App: React.FC = () => {
       },
     };
 
-    setScene((prev) => ({
-      ...prev,
-      objects: [...prev.objects, newObj],
-    }));
+    pushSceneState({
+      ...scene,
+      objects: [...scene.objects, newObj],
+    });
     setSelectedInstanceId(newInstanceId);
-    setSaveStatus("unsaved");
   };
 
   const handleUpdateObject = (updated: SceneObject) => {
-    setScene((prev) => ({
-      ...prev,
-      objects: prev.objects.map((o) =>
+    pushSceneState({
+      ...scene,
+      objects: scene.objects.map((o) =>
         o.instance_id === updated.instance_id ? updated : o
       ),
-    }));
-    setSaveStatus("unsaved");
+    });
   };
 
   const handleRemoveObject = (instanceId: string) => {
-    setScene((prev) => ({
-      ...prev,
-      objects: prev.objects.filter((o) => o.instance_id !== instanceId),
-    }));
+    pushSceneState({
+      ...scene,
+      objects: scene.objects.filter((o) => o.instance_id !== instanceId),
+    });
     if (selectedInstanceId === instanceId) {
       setSelectedInstanceId(null);
     }
-    setSaveStatus("unsaved");
   };
 
   const handleUpdateRoomDimensions = async (
@@ -184,11 +251,10 @@ export const App: React.FC = () => {
     length_m: number,
     height_m: number
   ) => {
-    setScene((prev) => ({
-      ...prev,
+    pushSceneState({
+      ...scene,
       room: { width_m, length_m, height_m },
-    }));
-    setSaveStatus("unsaved");
+    });
 
     if (activeProjectId && activeProject?.rooms?.[0]?.id) {
       try {
@@ -218,6 +284,10 @@ export const App: React.FC = () => {
         onOpenCreateModal={() => setIsCreateModalOpen(true)}
         saveStatus={saveStatus}
         onSaveScene={handleSaveScene}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
       />
 
       {/* Conflict or Validation Banner */}
@@ -261,6 +331,8 @@ export const App: React.FC = () => {
                 scene={scene}
                 selectedInstanceId={selectedInstanceId}
                 onSelectObject={setSelectedInstanceId}
+                onUpdateObject={handleUpdateObject}
+                onRemoveObject={handleRemoveObject}
               />
             </div>
           )}
